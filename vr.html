@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Recorder</title>
+  <!-- Materialize CSSのCDNリンク -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+<body>
+  <h1>Voice Recorder</h1>
+  <button id="requestPermissionButton" class="btn waves-effect waves-light">Request Microphone Permission</button>
+  <a id="startButton" class="btn waves-effect waves-light disabled">Start Recording</a>
+  <a id="stopButton" class="btn waves-effect waves-light red disabled">Stop Recording</a>
+  <a id="playButton" class="btn waves-effect waves-light disabled">Play Recording</a>
+
+  <audio id="audioElement" controls></audio>
+
+  <!-- Materialize JSのCDNリンク -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    let stream;
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    const requestPermissionButton = document.getElementById('requestPermissionButton');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const playButton = document.getElementById('playButton');
+    const audioElement = document.getElementById('audioElement');
+
+    requestPermissionButton.addEventListener('click', requestMicrophonePermission);
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+    playButton.addEventListener('click', playRecording);
+
+    async function requestMicrophonePermission() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        requestPermissionButton.classList.add('disabled');
+        startButton.classList.remove('disabled');
+      } catch (error) {
+        console.error('Failed to get microphone permission:', error);
+      }
+    }
+
+    async function startRecording() {
+      mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = function(event) {
+        recordedChunks.push(event.data);
+      }
+
+      mediaRecorder.onstop = function() {
+        let blob = new Blob(recordedChunks, { type: 'audio/wav' });
+        audioElement.src = URL.createObjectURL(blob);
+        recordedChunks = [];
+        playButton.classList.remove('disabled');
+      }
+
+      mediaRecorder.start();
+      startButton.classList.add('disabled');
+      stopButton.classList.remove('disabled');
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      startButton.classList.remove('disabled');
+      stopButton.classList.add('disabled');
+    }
+
+    function playRecording() {
+      audioElement.play();
+    }
+  </script>
+</body>
+</html>
